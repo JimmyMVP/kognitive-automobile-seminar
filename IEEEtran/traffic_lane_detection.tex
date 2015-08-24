@@ -1,0 +1,101 @@
+\documentclass[conference]{IEEEtran}
+\usepackage[utf8]{inputenc}
+
+
+% correct bad hyphenation here
+\usepackage{cite}
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+\DeclareUnicodeCharacter{00A0}{~}
+
+\begin{document}
+%
+% paper title
+% can use linebreaks \\ within to get better formatting as desired
+\title{Traffic Lane Detection in Urban Environments}
+
+
+\author{\IEEEauthorblockN{Marin Vlastelica Pogančić}
+\IEEEauthorblockA{Karlsruher Institüt für Technologie\\
+Karlsruhe, Deutschland\\
+Supervisor: Florian Kuhnt}}
+
+
+% make the title area
+\maketitle
+
+
+\begin{abstract}
+%\boldmath
+We live in a time of rapid development of autonomous driving systems and the continuous deployment of the same systems in everyday life. This poses a large span of challenges, in order to make the systems reliable and robust in their deployment, much of this robustness relies on the information obtained through sensors from the environment. The pros and cons of different approaches for traffic lane detection will be discussed and the corresponding results compared, with an emphasis on the urban environment, where the challenge of detecting the lanes requires more consideration. 
+\end{abstract}
+
+
+
+\IEEEpeerreviewmaketitle
+
+
+
+\section{Introduction}
+
+As mentioned in the abstract, lane traffic detection in urban environments poses an even greater challenge, there are many reasons for this. One of the main reasons is the cluttered environment, urban environments have many objects, obstacles on the streets which can contribute to the ambiguity of the sensor data. On the other hand, we have many streets in urban environments that don't have lane markings, which means that robust curb detection is also needed to detect the traffic lanes correctly. In chapter II are the lane marking methods discussed. In chapter III are the curb detection methods discussed. 
+
+\subsection{Diverse Approaches}
+
+Diverse solutions for the lane detection problems exist since a long time ago, most of them based on 3D data analysis and pattern recognition. The challenge is to improve the robustness of the detection algorithms using additional context. Therefore, there are some approaches using vehicle tracking to determine the positions of the markings, like proposed in \cite{virtuallane}, that try to use additional context to make the detections more robust and effective. Albeit there are many approaches in this field, the sensor data in use is not so diverse, the driving lane detection is mostly based on stereo-camera imagery and 3D laser sensor data.
+
+
+\section{Lane Marker Detection}
+a
+
+\section{Curb Detection}
+
+One of the more important tasks in an urban environment is curb detection. The reason for this is that many streets in an urban environment are small streets without lane markings. In order to fully function in an urban environment, autonomous vehicles have to solve this problem in an appropriate manner also. In this chapter will the different approaches to solving this problem be mentioned.  
+
+\subsection{Elevation Mapping Techniques}
+
+In this chapter will an approach suggested in \cite{stereo} be explained. The approach, as the name suggests, is based on using elevation maps. By means of these maps can the most probable paths be calculated. The position accuracy that was able to be achieved is about 10 cm and an height error of about 1.5 cm, tested in real-time.
+
+The sensor used primarily in this approach is the stereo camera, where the output of the stereo camera are two intensity images and one disparity image. For the ego motion is the inertial measurement unit used. 
+
+The first step that is to be made is to take the disparity image and generate a position 3D point cloud from it in the sensor coordinate system. This generated point cloud finds itself in the sensor coordinate system at the beginning, the next step is to transform this point cloud into the map coordinate system after the ground pixels had been detected. Thereafter is important to use the ego motion estimation. 
+
+The ego motion estimation is used to estimate the ego motion of the vehicle between two timestamps. The DEM model used in this approach is based on a 2.5-D map described in \cite{bewegung}. It accumulates of the stereo camera in the Euclidean space using temporal integration. One cell in the map is of the size 20 x 20 cm and has a one dimensional Kalman-Filter which estimates the height of the cell. In each prediction step is the cell height adjusted according to the ego motion of the car, for the correction step is the Kalman-Filter updated with the sensor measurements. 
+
+The detection approach is as follows. The static and dynamic objects lead to value spikes in the DEM, whereby the dynamic objects need to be removed, in order to detect the curbs. The dynamic objects are detected with a laser scanner and removed from the point cloud generated from the stereo camera.The rest of the points are divided into ground points and object points. The ground detection algorithm assumes steadily growing x values in the sensor coordinate system, when the disparity image columns are considered. If the x values are steadily growing, then it can be assumed, that ground is in front of the car, otherwise this assumption cannot be made. To compensate the effect of the outliers, the mean value of two consecutive columns with 3 pixels each is calculated.
+
+What also must be considered are the mapping techniques which also have an effect on the performance, since these are not the central aspect of this paper, all of them are mentioned and analysed in \cite{stereo}. 
+
+The road curb is represented by a polygonal chain, this chain consists of supporting points and the connections between these supporting points. Every point contains a 2D position and the road curb height at its position. 
+
+\subsubsection{Road Curb Detection Algorithm}
+
+The first step at road curb detection is the road curb feature extraction. This is achieved by applying an edge-detection algorithm on the DEM to find cells with a jump in the neighbouring height values, which might be caused by a road curb. Only cells with a minimal number of updates are considered, because less updates means more noise. A Sobel operator is used for the edge detection an the result is normalized, if the normalized result finds itself within a range, then a road curb feature is found.
+
+Then the features are registered in a second map with the size of the region of interest and a lower resolution.There must be a minimum of features in one of the low resolutions cells to be marked as a curb cell, because a road curb is not a singular feature like a reflector post used for road boundary detection. By building histograms of road curb features perpendicular to the driving direction the most probable path is determined. To build the polygonal chain the minimal distance approach is used,which considers the closest features to the most probable path as the road curb. In general the road curb is the closest boundary to the path visible in an elevation map. The output of the road curb detection algorithm are polygonal chains for both sides of the vehicle.
+
+To enhance the accuracy of the position of the road curb, a maximum search strategy is applied...
+
+\subsection{•} 
+ 
+ 
+ 
+ 
+ 
+\section{Conclusion}
+The conclusion goes here.
+\nocite{*}
+
+% use section* for acknowledgement
+\section*{Acknowledgment}
+
+The authors would like to thank...
+
+
+\bibliographystyle{bibtex/IEEEtran}
+\bibliography{bibliography}
+
+% that's all folks
+\end{document}
+
+
