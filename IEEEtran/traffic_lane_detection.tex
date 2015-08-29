@@ -88,7 +88,7 @@ In this section a method proposed in \cite{stereo} using a laser scanner to dete
 
 For testing this method, the equipment proposed in \cite{stereo} is the following. For road curb detection, a multipurpose laserscanner is used. For the ego motion estimation a low cost inertial measurement unit is used in combination with the standard wheel speed sensors and chassis lift sensors. 
 
-The road curb detection pipeline is shown in \ref{fig1}. As the figure shows, the detection is split into 3 modules. In the first module is used for for the road curb feature extraction and labeling. The detected road curb candidates have to be accumulated over time, so they are stored into the road curb map, where they undergo ego motion compensation. In the last module uses the temporal filtered parameters stored in the cells of the road curb map to group the road curb candidates into road curbs. In the end, the road curbs are represented as polygonal chains.  
+The road curb detection pipeline is shown in \ref{fig1}. As the figure shows, the detection is split into 3 modules. In the first module is used for for the road curb feature extraction and labelling. The detected road curb candidates have to be accumulated over time, so they are stored into the road curb map, where they undergo ego motion compensation. In the last module uses the temporal filtered parameters stored in the cells of the road curb map to group the road curb candidates into road curbs. In the end, the road curbs are represented as polygonal chains.  
 
 \begin{figure}[ht]
 	\centering
@@ -99,7 +99,7 @@ The road curb detection pipeline is shown in \ref{fig1}. As the figure shows, th
   
 At the point of detecting road curb features, three approaches can be used: segmentation using iterative end point fit and classification of segments, hierarchic segmentation and classification of segments, segmentation using regression lines and classification of segments.
 
-The IEPF algorithm described in this section is a well known segmentation algorithm. In this method, the input to the algorithm is the orthogonal projections of the 3D points on the y-z plane. The start and end point of the scan line are connected and the distance to the straight line is calculated for each point, as shown in \ref{fig2}. The measurement points are split into two segments at the point with maximum distance, the circled point in \ref{fig2}, if it exceeds a predetermined threshold. This takes place for every generative segment iteratively, till there are no points that cross this threshold. For each segment that contains the minimum number of points, the angle $\alpha_S$ between the regression line of the segments, the average height and the variance of the height values is being calculated. The segments are classified into four classes: road curb, object, ground and street. This method assumes that the segments containing the central channels of the scan lines is a street. After that, the process continues by going in both direction of the scan line and classifying the object segment with a object classification algorithm. For the segments not labeled as objects, an angle between that segment and the last found street segment is calculated. If this angle $|\alha - \alpha_S|$ is greater than a threshold $T_{\alpha,1}$, the segment is marked as a road curb. If the angle is greater than $T_{\alpha,2}$ but lower than $T_{\alpha,1}$, or the difference to the height of the neighboring lane segment $|h - h_S|$ is lower than $T_h$ or the difference in variance $|\sigma - \sigma_S|$ is above $T_\sigma$, then the segment is marked as ground. The variance criterion is used to distinguish the streets in unstructured environments, with a lot of gravel and grass for example. If none of these criteria are met, then the segment is classified as a street segment and is used for further evaluation of segments. 
+The IEPF algorithm described in this section is a well known segmentation algorithm. In this method, the input to the algorithm is the orthogonal projections of the 3D points on the y-z plane. The start and end point of the scan line are connected and the distance to the straight line is calculated for each point, as shown in \ref{fig2}. The measurement points are split into two segments at the point with maximum distance, the circled point in \ref{fig2}, if it exceeds a predetermined threshold. This takes place for every generative segment iteratively, till there are no points that cross this threshold. For each segment that contains the minimum number of points, the angle $\alpha_S$ between the regression line of the segments, the average height and the variance of the height values is being calculated. The segments are classified into four classes: road curb, object, ground and street. This method assumes that the segments containing the central channels of the scan lines is a street. After that, the process continues by going in both direction of the scan line and classifying the object segment with a object classification algorithm. For the segments not labelled as objects, an angle between that segment and the last found street segment is calculated. If this angle $|\alha - \alpha_S|$ is greater than a threshold $T_{\alpha,1}$, the segment is marked as a road curb. If the angle is greater than $T_{\alpha,2}$ but lower than $T_{\alpha,1}$, or the difference to the height of the neighboring lane segment $|h - h_S|$ is lower than $T_h$ or the difference in variance $|\sigma - \sigma_S|$ is above $T_\sigma$, then the segment is marked as ground. The variance criterion is used to distinguish the streets in unstructured environments, with a lot of gravel and grass for example. If none of these criteria are met, then the segment is classified as a street segment and is used for further evaluation of segments. 
 
 \begin{figure}[ht]
 	\centering
@@ -109,7 +109,7 @@ The IEPF algorithm described in this section is a well known segmentation algori
 \end{figure}
  
 
-Another possible approach for segmentation is segmentation using regression lines. For every measurement point a forward anda backward regression line is calculated containing n pointsbefore or after the measurement point. The regression lines are calculated in the z-channel-space.  In all adjunct points with anintersection angle exceeding a certain threshold a maximum search regarding the intersection angle is conducted. At the maximum, a segment is terminated. The classification steps are performed in the y-z-space again as described for the IEPF algorithm. As the regressions lines are build with only a few measure-ment points this detection algorithm is sensitive to outliers inthe data set? This segmentation method is shown in \ref{fig3}
+Another possible approach for segmentation is segmentation using regression lines. For every measurement point a forward and a backward regression line is calculated containing n points before or after the measurement point. The regression lines are calculated in the z-channel-space.  In all adjunct points with an intersection angle exceeding a certain threshold a maximum search regarding the intersection angle is conducted. At the maximum, a segment is terminated. The classification steps are performed in the y-z-space again as described for the IEPF algorithm. As the regressions lines are build with only a few measurement points this detection algorithm is sensitive to outliers int he data set? This segmentation method is shown in \ref{fig3}
 
 \begin{figure}[ht]
 	\centering
@@ -118,7 +118,7 @@ Another possible approach for segmentation is segmentation using regression line
 	\label{fig3}
 \end{figure}
 
-The final segmentation method considered is the hieararchic segmentation and classification of segments. The segments are built pairwise from neighboring height values. Two neighboring segments are merged if the standard deviation of the height values in relation to the calculated regression line of the merged segment is below a certain threshold. This is processed in a pyramid procedure until a new segment does not fulfill the described variance criterion.This process ist shown in \ref{fig4}
+The final segmentation method considered is the hieararchic segmentation and classification of segments. The segments are built pairwise from neighbouring height values. Two neighbouring segments are merged if the standard deviation of the height values in relation to the calculated regression line of the merged segment is below a certain threshold. This is processed in a pyramid procedure until a new segment does not fulfill the described variance criterion.This process is shown in \ref{fig4}
 
 \begin{figure}[ht]
 	\centering
@@ -135,12 +135,33 @@ For every new measurement frame an additional step is necessary to compensate th
 
 The road curb extraction takes place in the road curb extraction module. The module uses the model parameters to build chains of road curb candidates. To identify the most relevant curb chains, an estimated central line of the current lane is used, as shown in \ref{fig5}
 
+
+
 \begin{figure}[ht]
 	\centering
   \includegraphics[scale = 0.6]{pictures/extractor.pdf}
 	\caption{Ro}
 	\label{fig5}
 \end{figure}
+
+
+The results obtained with this method are presented in \ref{tab1}.
+
+\begin{table}[]
+\centering
+\caption{My caption}
+\label{tab1}
+\begin{tabular}{lllllll}
+\cline{2-7}
+\multicolumn{1}{l|}{Methods} & \multicolumn{1}{l|}{Curb HR} & \multicolumn{1}{l|}{Curb FPR} & \multicolumn{1}{l|}{Object HR} & \multicolumn{1}{l|}{Object FPR} & \multicolumn{1}{l|}{Street HR} & \multicolumn{1}{l|}{Street FPR} \\ \cline{2-7} 
+IEPF                         & 38.9\%                       & 3.3\%                         & 93.4\%                         & 0.9\%                           & 80.7\%                         & 12.9\%                          \\
+Regression Lines             & 22.1\%                       & 1.5\%                         & 89.8\%                         & 0.9\%                           & 82.1\%                         & 19.6\%                          \\
+Hierarchic Segmentation      & 30.9\%                       & 5.9\%                         & 73.2\%                         & 6.2\%                           & 78.2\%                         & 11.2\%                         
+\end{tabular}
+\end{table}
+
+The IEPF segmentation method has proven to be the most efficient method in detecting road curbs, with a slightly higher false positive rate than the regression lines method. Unfortunately the hierarchic segmentation method delivers the fastest result, this is the trade-off between speed and hit rate.
+
 
 \section{Conclusion}
 The conclusion goes here.
