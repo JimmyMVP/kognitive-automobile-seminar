@@ -4,7 +4,6 @@
 \usepackage{svg}
 \usepackage{todonotes}
 \usepackage{mathtools}
-\usepackage{algpseudocode}
 \usepackage{algorithm}
 \usepackage{amsmath}
 
@@ -235,6 +234,32 @@ d_{c,l} = h_{c,l + 1} - h_{c,l -1}
 (\substack{\x^{*}_{c,max} \\ \y^{*}_{c,max}}) 
  \end{equation}
 
+
+\begin{equation}
+\label{eq4}
+w = \frac{d_{c,max-1} - d_{c,max+1}}{2(d_{c,max+1} - 2d_{c,max} + d_{c,max-1})}
+\end{equation}
+The supporting point for the polygonal chain is moved to the position found by this maximum search strategy. As curb height the heighest difference value $d_{c,max}$ is used. 
+
+
+There is no FPR/TPR evaluation offered for this method, but a speed evaluation was done in comparison between different mapping tehniques.
+
+\begin{table}
+\centering
+\begin{tabular}[|c|c|c|c|]
+\hline
+Tasks & RSBM & GM & BBM \\
+\hline
+3D Point Cloud Generation & 8.32 ms & 5.36 ms & 5.38 ms \\
+\hline
+Ego Compensation and Map Update & 7.51 ms & 7.44 ms & 8.39 ms \\
+\hline
+Road Curb Detection & 3.73 ms & 3.66 ms & 3.72 ms \\
+\hline
+Sum & 19.55 ms & 16.46 ms & 17.49 ms \\
+\end{tabular}
+\end{table}
+
 \subsection{Laserscanner Based Road Curb Detection}
 
 In this section a method proposed in \cite{stereo} using a laser scanner to detect road curbs will be described. The argument for using laser scanners instead of stereo cameras is that the laserscanner provides more accurate data. Some methods have been developed, that use sensor fusion with the stereo camera to overcome this precision lacking. Unfortunately these methods produce a big overhead in the data processing step, which makes a big difference in an autonomous vehicle, because it is a real-time system.
@@ -307,7 +332,7 @@ The results obtained with this method are presented in \ref{tab1}.
 
 \begin{table}[]
 \centering
-\caption{My caption}
+\caption{FPR and TPR Evaluation}
 \label{tab1}
 \resizebox{\columnwidth}{20px}{\begin{tabular}{lllllll}
 \cline{1-7}
@@ -318,17 +343,35 @@ Hierarchic Segmentation      & 30.9\%                       & 5.9\%             
 \end{tabular}}
 \end{table}
 
+\begin{table}
+\centering
+\caption{Method speed evaluation}
+\begin{tabular}[|c|c|c|c|]
+\hline
+Task & IEPF & Regression Lines & Hierarchic Segmentation \\
+\hline
+Road Curb Feature Detection & 2.02 ms & 1.95 ms & 1.56 ms \\
+\hline
+Road Curb Map & 0.16 ms & 0.15 ms & 0.16 ms \\
+\hline
+Road Curb Extractor & 4.57 ms & 3.78 ms & 3.88 ms \\
+\hline
+Sum & 6.75 ms & 5.88 ms & 5.60 ms \\
+\hline
+\end{tabular}
+\end{table}
+
+
 The IEPF segmentation method has proven to be the most efficient method in detecting road curbs, with a slightly higher false positive rate than the regression lines method. Unfortunately the hierarchic segmentation method delivers the fastest result, this is the trade-off between speed and hit rate.
 
 
 \section{Conclusion}
-The conclusion goes here.
+Through the analysis of the methods presented in this paper, one can see that lane marking detection and curb detection is a complex task, especially in urban environments with more occlussions and other disruptions. Despite that some methods had arized that produce good results, but not fool proof after all. More progress could be made with paying more attention to the context, like in \cite{virtuallane}.
+
+The comparsion of the stereo camera method with the stereo camera method with elevation maps and the LIDAR method is hardly comparable regarding speed, the method with the LIDAR scanner is orders of magnitude faster than the stereo camera method. Naturally the downside of the LIDAR scanner method is the cost of the hardware, in comparison to the cheap stereo camera. 
+
+
 \nocite{*}
-
-% use section* for acknowledgement
-\section*{Acknowledgment}
-
-The authors would like to thank...
 
 
 \bibliographystyle{bibtex/IEEEtran}
