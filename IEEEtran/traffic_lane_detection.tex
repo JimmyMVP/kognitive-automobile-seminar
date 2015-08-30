@@ -1,7 +1,10 @@
-\documentclass[conference]{IEEEtran}
+ \documentclass[conference]{IEEEtran}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{svg}
+\usepackage{todonotes}
+\usepackage{mathtools}
+
 
 
 % correct bad hyphenation here
@@ -49,6 +52,32 @@ Diverse solutions for the lane detection problems exist since a long time ago, m
 
 \section{Lane Marker Detection}
 
+Lane marker detection is one of the important, if not the most important, challenges in autonomous driving in general. The situation in which the car finds itself will mostly contain environments with traffic lanes denoted by lane markings. Because the environments in which the lanes should be detected are often cluttered, this task is coupled with object detection and prediction methods to make it more efficient. Nowadays the methods for detecting lanes could be divided into two categories: feature-based and model-based methods. The feature-based methods locate the lane-markings using segmentation algorithms whereas the model-based methods use mathematical models to represent the lane. Although the model-base methods achieve impressive results considering their low FPR, they mostly carry high computational costs which unable them to be used in a real-time system.
+
+\subsection{Improved RANSAC Algorithm}
+
+The RANSAC algorithm is the most often used algorithm for lane marking detection. The algorithm is basically an iterative method to estimate parameters of a mathematical model from a set of observed data which contains outliers. In this section will the approach proposed in \cite{ransac} be discussed, which contains a lane marking model-based detection method with an improved RANSAC algorithm.
+
+To achieve a better result in the lane detection step, some image preprocessing is required. The image preprocessing steps that were taken in \cite{ransac} are the following. First of all, a region of interest in the image is chosen. The next preprocessing step is a spatial graying of the image, so the worn out yellow lane markings are better detected. The spatial graying of the image is achieved by 5:4:1 weighted summing of the RGB values, which is proven to be more efficient for determining edges in previous approaches. In addition to the mentioned, a vanishing point of the lanes is added, which can be determined by means of the camera parameters. The last step of the image preprocessing is the denoising of the image. This is achieved by the median filtering method, to meet the real-time requirements.
+
+The most common features used in lane detection are image gradient and edge features. The reason for the preference of these features is their simplicity, which benefits the real-time requirement of the system. Unfortunately these features are also prone to changing lighting conditions. The edge detection algorithm used in this method is the Canny edge detection algorithm.
+
+After the feature extraction part, the next crucial step is lane modelling and lane model parameter estimation. Here comes the trade-off, simple lane models are not able to detect the lanes accurately, for them complex lane shapes (curved lanes) present a problem. On the other hand, the more complex the models are the complexity of the parameter estimation rises and therefore, the computational costs. These points need to be kept in mind when designing a real-time system. For this method, the left and right lane boundaries are described by generalized curves, which has shown good results in the past, in addition, the model takes the planar ground surface and parallel lines constraints.  This model approach is in detail described in \cite{ransac1}. The generalized curve can be described by \ref{eq1}.
+
+\begin{equation}
+x = \frac{a}{y-vp_y}+b(y-vp_y) +c
+\label{eq1}
+\end{equation}
+
+The parameter definitions are as follows: parameter $a$ controls the curvature of the curve, parameter $c$ represents the vanishing point positions, parameter $b$ corresponds to the horizontal positions of the left and right curves - the positions of intersections between the curves and the lowest row of the image, parameter $vp_y$ denotes the vanishing line position in the image and the parameters $x$ and $y$ are the number of the rows and columns of the image. For example, a straight line in the model can be represented when the parameter $a$ is set to 0. 
+
+The parameter estimation of the model is the most important step of the lane detection process, this is where the RANSAC algorithm comes into play, a more detailed explanation of the RANSAC algorithm is available in \cite{ransac2}. The RANSAC algorithm can adapt to the
+complex conditions of lane estimation of model parameters
+and it does not need training process compared to the Hough
+transform and template matching method.
+
+The lane feature points extracted by the Canny method contain a lot of noisy points for various reasons as damaged road surface or varying lighting conditions for example. 
+
 \subsection{Lane Detection Enhancement Using Virtual Lane}
 
 In this section will a method be described, that uses relative movements between the vehicles to enhance the lane detection. This approach is meant to overcome the difficulties that pose themselves through pure detection through the camera. In comparison to the other  
@@ -92,18 +121,20 @@ The road curb detection pipeline is shown in \ref{fig1}. As the figure shows, th
 
 \begin{figure}[ht]
 	\centering
-  \includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
+  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
+  	\missingfigure{\Huge I need the image, now!}
 	\caption{Ro}
 	\label{fig1}
 \end{figure}
   
 At the point of detecting road curb features, three approaches can be used: segmentation using iterative end point fit and classification of segments, hierarchic segmentation and classification of segments, segmentation using regression lines and classification of segments.
 
-The IEPF algorithm described in this section is a well known segmentation algorithm. In this method, the input to the algorithm is the orthogonal projections of the 3D points on the y-z plane. The start and end point of the scan line are connected and the distance to the straight line is calculated for each point, as shown in \ref{fig2}. The measurement points are split into two segments at the point with maximum distance, the circled point in \ref{fig2}, if it exceeds a predetermined threshold. This takes place for every generative segment iteratively, till there are no points that cross this threshold. For each segment that contains the minimum number of points, the angle $\alpha_S$ between the regression line of the segments, the average height and the variance of the height values is being calculated. The segments are classified into four classes: road curb, object, ground and street. This method assumes that the segments containing the central channels of the scan lines is a street. After that, the process continues by going in both direction of the scan line and classifying the object segment with a object classification algorithm. For the segments not labelled as objects, an angle between that segment and the last found street segment is calculated. If this angle $|\alha - \alpha_S|$ is greater than a threshold $T_{\alpha,1}$, the segment is marked as a road curb. If the angle is greater than $T_{\alpha,2}$ but lower than $T_{\alpha,1}$, or the difference to the height of the neighboring lane segment $|h - h_S|$ is lower than $T_h$ or the difference in variance $|\sigma - \sigma_S|$ is above $T_\sigma$, then the segment is marked as ground. The variance criterion is used to distinguish the streets in unstructured environments, with a lot of gravel and grass for example. If none of these criteria are met, then the segment is classified as a street segment and is used for further evaluation of segments. 
+The IEPF algorithm described in this section is a well known segmentation algorithm. In this method, the input to the algorithm is the orthogonal projections of the 3D points on the y-z plane. The start and end point of the scan line are connected and the distance to the straight line is calculated for each point, as shown in \ref{fig2}. The measurement points are split into two segments at the point with maximum distance, the circled point in \ref{fig2}, if it exceeds a predetermined threshold. This takes place for every generative segment iteratively, till there are no points that cross this threshold. For each segment that contains the minimum number of points, the angle $\alpha_S$ between the regression line of the segments, the average height and the variance of the height values is being calculated. The segments are classified into four classes: road curb, object, ground and street. This method assumes that the segments containing the central channels of the scan lines is a street. After that, the process continues by going in both direction of the scan line and classifying the object segment with a object classification algorithm. For the segments not labelled as objects, an angle between that segment and the last found street segment is calculated. If this angle $|\alpha - \alpha_S|$ is greater than a threshold $T_{\alpha,1}$, the segment is marked as a road curb. If the angle is greater than $T_{\alpha,2}$ but lower than $T_{\alpha,1}$, or the difference to the height of the neighboring lane segment $|h - h_S|$ is lower than $T_h$ or the difference in variance $|\sigma - \sigma_S|$ is above $T_\sigma$, then the segment is marked as ground. The variance criterion is used to distinguish the streets in unstructured environments, with a lot of gravel and grass for example. If none of these criteria are met, then the segment is classified as a street segment and is used for further evaluation of segments. 
 
 \begin{figure}[ht]
 	\centering
-  \includegraphics[scale = 0.35]{pictures/iepf.pdf}
+  %\includegraphics[scale = 0.35]{pictures/iepf.pdf}
+    \missingfigure{\Huge I need the image, now!}
 	\caption{Ro}
 	\label{fig2}
 \end{figure}
@@ -113,7 +144,8 @@ Another possible approach for segmentation is segmentation using regression line
 
 \begin{figure}[ht]
 	\centering
-  \includegraphics[scale = 0.5]{pictures/iepf2.pdf}
+  %\includegraphics[scale = 0.5]{pictures/iepf2.pdf}
+    \missingfigure{\Huge I need the image, now!}
 	\caption{Ro}
 	\label{fig3}
 \end{figure}
@@ -122,7 +154,8 @@ The final segmentation method considered is the hieararchic segmentation and cla
 
 \begin{figure}[ht]
 	\centering
-  \includegraphics[scale = 0.55]{pictures/iepf3.pdf}
+ %\includegraphics[scale = 0.55]{pictures/iepf3.pdf}
+   	\missingfigure{\Huge I need the image, now!}
 	\caption{Ro}
 	\label{fig4}
 \end{figure}
@@ -139,7 +172,8 @@ The road curb extraction takes place in the road curb extraction module. The mod
 
 \begin{figure}[ht]
 	\centering
-  \includegraphics[scale = 0.6]{pictures/extractor.pdf}
+  %\includegraphics[scale = 0.6]{pictures/extractor.pdf}
+    \missingfigure{\Huge I need the image, now!}
 	\caption{Ro}
 	\label{fig5}
 \end{figure}
@@ -151,13 +185,13 @@ The results obtained with this method are presented in \ref{tab1}.
 \centering
 \caption{My caption}
 \label{tab1}
-\begin{tabular}{lllllll}
-\cline{2-7}
-\multicolumn{1}{l|}{Methods} & \multicolumn{1}{l|}{Curb HR} & \multicolumn{1}{l|}{Curb FPR} & \multicolumn{1}{l|}{Object HR} & \multicolumn{1}{l|}{Object FPR} & \multicolumn{1}{l|}{Street HR} & \multicolumn{1}{l|}{Street FPR} \\ \cline{2-7} 
+\resizebox{\columnwidth}{20px}{\begin{tabular}{lllllll}
+\cline{1-7}
+\multicolumn{1}{|l|}{Methods} & \multicolumn{1}{l|}{Curb HR} & \multicolumn{1}{l|}{Curb FPR} & \multicolumn{1}{l|}{Object HR} & \multicolumn{1}{l|}{Object FPR} & \multicolumn{1}{l|}{Street HR} & \multicolumn{1}{l|}{Street FPR} \\ \cline{1-7} 
 IEPF                         & 38.9\%                       & 3.3\%                         & 93.4\%                         & 0.9\%                           & 80.7\%                         & 12.9\%                          \\
 Regression Lines             & 22.1\%                       & 1.5\%                         & 89.8\%                         & 0.9\%                           & 82.1\%                         & 19.6\%                          \\
 Hierarchic Segmentation      & 30.9\%                       & 5.9\%                         & 73.2\%                         & 6.2\%                           & 78.2\%                         & 11.2\%                         
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 The IEPF segmentation method has proven to be the most efficient method in detecting road curbs, with a slightly higher false positive rate than the regression lines method. Unfortunately the hierarchic segmentation method delivers the fastest result, this is the trade-off between speed and hit rate.
