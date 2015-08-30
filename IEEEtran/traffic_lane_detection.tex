@@ -4,6 +4,11 @@
 \usepackage{svg}
 \usepackage{todonotes}
 \usepackage{mathtools}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{amsmath}
+
+
 
 
 
@@ -76,7 +81,63 @@ complex conditions of lane estimation of model parameters
 and it does not need training process compared to the Hough
 transform and template matching method.
 
-The lane feature points extracted by the Canny method contain a lot of noisy points for various reasons as damaged road surface or varying lighting conditions for example. 
+The lane feature points extracted by the Canny method contain a lot of noisy points for various reasons as damaged road surface or varying lighting conditions for example. This makes it very difficult to calculate the lane model parameters correctly. The improved RANSAC algorithm has a process as follows.
+
+\begin{algorithm}
+\caption{The improved RANSAC algorithm}
+\label{alg1}
+\begin{algorithmic}[1]
+\State Initial lane model parameter vector $Mod=NULL$, iterator $i=1$, get lane boundary feature points set $P$, inlier points set $I=NULL$, $Modbest=NULL$, $S=0$. \linebreak
+\State Random select $n$ ($n=3$) points from $P$ (these points should be located in different rows of the image), calculate $Mod$ by these points.
+\State For any point $p_i(y_i,x_i)$ $p_i \in P $, if $Dist(p_i)<D_{threshold}$, add $p_i$ to inlier points set $I$.
+\State If $number(I) < Num_{threshold}$ or $Mod$ doesn't meet the constraints, $P=P-I,I=NULL$, goto step 2).
+\State Recalculate $Mod$ by function $LeastSquareFit(I)$, If $Score(I)>S, S=Score(I), Modbest=Mod, P=P-I, I=NULL, i++$
+\State If $i < numIterations$, go to step 2
+\end{algorithmic}
+
+\end{algorithm} 
+
+In the algorithm \ref{alg1} is the vector $Mod = [a,b,c]$, function $Dist(p_i) = |x_i - \frac{a}{y_i - vp_y} + b(y_i - vp_y)+ c|$. $D_{threshold} = 1$, $Num_{threshold} = 12$ and the function $Score(I) = \sum_{p_i \in I}t(p_i)$ 
+$t(p_i) \in [0,1]$ if $Dist(p_i) < 1, t(p_i) = 1$, else $t(p_i)=0$.
+
+The $LeastSquaresFit(I)$ is a function which takes points of set $I$ and fits the lane model using a least squares method.
+
+\begin{table}[]
+\centering
+\caption{Improved RANSAC method evaluation}
+\label{eval1}
+\begin{tabular}{c c c}
+\hline
+Datasets & TPR & FPR \\
+\hline 
+\\
+1 & 96.37\% & 3.17\% \\
+2 & 97.24\% & 25.39\% \\
+3 & 94.64\% & 7.23\% \\
+4 & 94.73\% & 3.85\% \\
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[ht]
+	\centering
+  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
+  	\missingfigure{\Huge I need the image, now!}
+	\caption{Good detection results}
+	\label{fig5}
+\end{figure}
+
+
+\begin{figure}[ht]
+	\centering
+  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
+  	\missingfigure{\Huge I need the image, now!}
+	\caption{Bad detection results}
+	\label{fig6}
+\end{figure}
+
+The results presented in table \ref{eval1} are obtained from the Caltech lane dataset. Unfortunately, this method clearly has problems with signs on the road, which can be seen in figure \ref{fig6}.
+
 
 \subsection{Lane Detection Enhancement Using Virtual Lane}
 
@@ -100,16 +161,79 @@ The ego motion estimation is used to estimate the ego motion of the vehicle betw
 
 The detection approach is as follows. The static and dynamic objects lead to value spikes in the DEM, whereby the dynamic objects need to be removed, in order to detect the curbs. The dynamic objects are detected with a laser scanner and removed from the point cloud generated from the stereo camera.The rest of the points are divided into ground points and object points. The ground detection algorithm assumes steadily growing x values in the sensor coordinate system, when the disparity image columns are considered. If the x values are steadily growing, then it can be assumed, that ground is in front of the car, otherwise this assumption cannot be made. To compensate the effect of the outliers, the mean value of two consecutive columns with 3 pixels each is calculated.
 
-What also must be considered are the mapping techniques which also have an effect on the performance, since these are not the central aspect of this paper, all of them are mentioned and analysed in \cite{stereo}. 
+What also must be considered are the mapping techniques which also have an effect on the performance, since these are not the central aspect of this paper, all of them are mentioned and analysed in \cite{stereo}. The mapping techniques used in \cite{stereo} are the following: vehicle body based mapping, global mapping and road surface based mapping. 
 
-The road curb is represented by a polygonal chain, this chain consists of supporting points and the connections between these supporting points. Every point contains a 2D position and the road curb height at its position. 
 
-\subsubsection{Road Curb Detection Algorithm}
+\begin{enumerate}
+\item Vehicle body based mapping
+\begin{itemize}
+\item Transforms the point cloud without the use of angles dependent on the ego motion
+\item Compensates every cell by its individual compensation value depending on the cell position relative to the origin of the coordinate system.
+\item Additionally to the angles and the ego motion uses the global pitch and yaw rate and the change of the body height compared to the ESC coordinate system.
+\item Does not use estimation of road surface.
+\end{itemize}
 
-The first step at road curb detection is the road curb feature extraction. This is achieved by applying an edge-detection algorithm on the DEM to find cells with a jump in the neighbouring height values, which might be caused by a road curb. Only cells with a minimal number of updates are considered, because less updates means more noise. A Sobel operator is used for the edge detection an the result is normalized, if the normalized result finds itself within a range, then a road curb feature is found.
+\item Global mapping
+\begin{itemize}
+\item Every cell has to be compensated by the same value.
+\item The highest demands on ego motion estimation, depends on the same angles as BBM and additionally uses the global pitch and roll. angles.
+\item Does not use estimation of road surface.
+\end{itemize}
+
+
+\item Road surface based mapping
+\begin{itemize}
+\item Requires estimation of the road surface and calculation of the relative height values
+\item Point cloud transformation computationally intensive
+\item Simple ego motion compensation, shift in x- and y-direction and compensation of the yaw angle
+\item Uses angles to the local street and the two-dimensional ego motion in the ESC coordinate system  for coordinate transformation and ego compensation of the map.
+\item Has lower information value, it only contains relative heights to the local surface estimation. 
+\item Uses estimation of road surface to calculate relative heights. This means that this mapping technique is mainly influenced by the road estimation.
+\end{itemize}
+\end{enumerate}
+
+
+The road curb is represented by a polygonal chain, this chain consists of supporting points and the connections between these supporting points. Every point contains a 2D position and the road curb height at its position. The chain consists of supporting points and the connection between these supporting points. Every supporting point contains a 2D position of the road curb height at its position ass seen in figure \ref{fig7}. 
+
+
+\begin{figure}[ht]
+	\centering
+  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
+  	\missingfigure{\Huge I need the image, now!}
+	\caption{Detection process}
+	\label{fig8}
+\end{figure}
+
+
+
+The first step at road curb detection is the road curb feature extraction. This is achieved by applying an edge-detection algorithm on the DEM to find cells with a jump in the neighbouring height values, which might be caused by a road curb. Only cells with a minimal number of updates are considered, because less updates means more noise. A Sobel operator is used for the edge detection an the result is normalized, if the normalized result finds itself within a range, then a road curb feature is found. 
+
+
+
+\begin{figure}[ht]
+	\centering
+  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
+  	\missingfigure{\Huge I need the image, now!}
+	\caption{Polygonal chain}
+	\label{fig7}
+\end{figure}
+
 
 In the next step the features are registered in a second map with the size of the region of interest and a lower resolution.There must be a minimum of features in one of the low resolutions cells to be marked as a curb cell, because a road curb is not a singular feature like a reflector post used for road boundary detection. By building histograms of road curb features perpendicular to the driving direction the most probable path is determined. To build the polygonal chain the minimal distance approach is used,which considers the closest features to the most probable path as the road curb. In general the road curb is the closest boundary to the path visible in an elevation map. The output of the road curb detection algorithm are polygonal chains for both sides of the vehicle.
 
+After the above steps had been completed, now a maximum search and calculation of curb height can take place, to enhance the position accuracy of the road curb.The height differences are built using the original values in the digital height map as seen in \ref{eq2}.
+
+\begin{equation}
+d_{c,l} = h_{c,l + 1} - h_{c,l -1}
+\label{eq2}
+\end{equation}
+
+ Here is an approach proposed by Hoffman in \cite{hoffmann} to determine the maximum point with a subcell accuracy:
+ 
+ \begin{equation}
+ \label{eq3}
+(\substack{\x^{*}_{c,max} \\ \y^{*}_{c,max}}) 
+ \end{equation}
 
 \subsection{Laserscanner Based Road Curb Detection}
 
