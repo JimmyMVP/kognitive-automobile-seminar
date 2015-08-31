@@ -4,10 +4,10 @@
 \usepackage{svg}
 \usepackage{todonotes}
 \usepackage{mathtools}
+\usepackage{algpseudocode}
 \usepackage{algorithm}
 \usepackage{amsmath}
-
-
+\usepackage{float}
 
 
 
@@ -99,7 +99,16 @@ The lane feature points extracted by the Canny method contain a lot of noisy poi
 In the algorithm \ref{alg1} is the vector $Mod = [a,b,c]$, function $Dist(p_i) = |x_i - \frac{a}{y_i - vp_y} + b(y_i - vp_y)+ c|$. $D_{threshold} = 1$, $Num_{threshold} = 12$ and the function $Score(I) = \sum_{p_i \in I}t(p_i)$ 
 $t(p_i) \in [0,1]$ if $Dist(p_i) < 1, t(p_i) = 1$, else $t(p_i)=0$.
 
+\begin{figure*}
+	\centering
+    \includegraphics[scale = 0.4]{pictures/tree.pdf}
+	\caption{CHM of a two-lane road. This figure shows the factorization of the joint probability distribution in (2) using an undirected graphical model. Hidden random variables are depicted in gray and symbols illustrate their type, i.e., features, patches, lanes, and multilane roads. Observable variables are shown in blackand dependencies between random variables are highlighted using edges. \cite{lanesystem}}
+	\label{fig10}
+\end{figure*}
+
 The $LeastSquaresFit(I)$ is a function which takes points of set $I$ and fits the lane model using a least squares method.
+
+
 
 \begin{table}[]
 \centering
@@ -120,29 +129,103 @@ Datasets & TPR & FPR \\
 
 \begin{figure}[ht]
 	\centering
-  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
-  	\missingfigure{\Huge I need the image, now!}
-	\caption{Good detection results}
+   \includegraphics[scale = 0.5]{pictures/good_detections.pdf}
+	\caption{Good detection results \cite{ransac}}
 	\label{fig5}
 \end{figure}
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 	\centering
-  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
-  	\missingfigure{\Huge I need the image, now!}
-	\caption{Bad detection results}
+    \includegraphics[scale = 0.5]{pictures/bad_detections.pdf}
+	\caption{Bad detection results \cite{ransac}}
 	\label{fig6}
 \end{figure}
 
+
+
 The results presented in table \ref{eval1} are obtained from the Caltech lane dataset. Unfortunately, this method clearly has problems with signs on the road, which can be seen in figure \ref{fig6}.
 
+\subsection{Tree Based Graphical Model}
 
-\subsection{Lane Detection Enhancement Using Virtual Lane}
+In this section an approach will be discussed, that is based on a tree based graphical model of the road \cite{lanesystem}. The purpose of the tree model is to capture the way the joint distributions over random variables can be decomposed into a product of factors. The end goal is the development of efficient inference algorithms. The example of the tree based structure for a multilane road can be seen in figure \ref{fig10}.
+The nodes on the lower level represent a recursive decomposition of the root object into parts and subparts, this enables the dividing of the perception problem into subproblems that are easier to solve. One of the shortcomings of this approach is that it assumes a flat road surface. The model of the scene is made in the vehicle coordinate system, located at the center of the rear axis. 
 
-In this section will a method be described, that uses relative movements between the vehicles to enhance the lane detection. This approach is meant to overcome the difficulties that pose themselves through pure detection through the camera. In comparison to the other  
+The tree is encoded by an undirected structured graph. The nodes correspond to three disjoint sets of variables $x \cup m \cup r$.  Each $x$ variable represents a part or a subpart of the multilane road, this is a hidden variable. The $m$ and $r$ variables correspond to the lane marking features and the road edge features. The edges between pairs of hidden variables define spatial constraints, which encode the dependencies between neighbouring hidden variables by means of conditional spatial distributions. Edges between hidden and observable random variables encode observation potentials.The details of the probability distribution factorization can be found in \cite{lanesystem}
+
+The leaves encode feature variables with associated observations, two of the observed features define a local driveable area referred to as patch, which form the second level of the tree. The figure \ref{fig11} illustrates that each patch is defined by a left and right lane boundary feature.
+
+\begin{figure}[H]
+	\centering
+    \includegraphics[scale = 0.4]{pictures/patch.pdf}
+	\caption{CHM of a patch and illustration of the modeled spatial constraints.(a) Patch is decomposed into a left and a right lane boundary, which are directlyobservable. (b) Illustration of the modeled spatial constraints, where spatialuncertainties are illustrated by showing 2-D Gaussian distributions, where darkcolors correspond to more likely locations.\cite{lanesystem}}
+	\label{fig11}
+\end{figure}
+
+The constraints between feature variables $x^f_i$ and patch variables $x^p_i$ are modelled using weak spatial constraints. 
+
+\begin{equation}
+\label{eq5}
+S_{ij}(x_i^f) = \begin{bmatrix}
+x_i \\
+y_i \\
+\vartheta \\
+\end{bmatrix}
++ \begin{bmatrix}
+\frac{1}{2}sin(\vartheta_i) & 0 & 0 & 0 & 0 \\
+0 & -\frac{1}{2}sin(\vartheta_i) & 0 &0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 1 \\
+\end{bmatrix}
+\begin{bmatrix}
+\upsilon_{w_p} \\
+\upsilon_{w_p} \\
+0 \\
+\upsilon_{w_p} \\
+\upsilon l_{v_p} \\
+\end{bmatrix}
+\end{equation}
+
+\begin{figure*}
+	\centering
+    \includegraphics[scale = 0.4]{pictures/roc.pdf}
+	\caption{Precision–Recall curves for (a) highway scenarios and for (b) rural scenarios. Results are computed using different algorithms and evaluated against theground truth\cite{lanesystem}}
+	\label{fig12}
+\end{figure*}
 
 
+The transformation in \ref{eq5} returns the predicted location of the variable $x_j^p$ based on the expected lane width $\upsilon_{w_p}$ and the state of variable $x_i^f$. 
+
+The next higher levels of the tree consist of lanes of increasing length, lanes are defined as a composition of individual patches. That means that the lanes are represented by a polygonal path with piecewise constant orientation and width. The length of a lane is defined as a sum of the euclidean distances between subsequent lane elements. Spatial constraints between pairs of lane variables are expected to predict the expected location of the subsequent lane element:
+\begin{equation}
+S_{ij}(x_i^l) = \begin{bmatrix}
+x_i \\
+y_i \\
+\vartheta_i \\
+w_i \\
+\end{bmatrix} +
+\begin{bmatrix}
+cos(\vartheta_i) & 0 & 0 & 0 \\
+0 & sin(\vartheta_i) & 0 & 0 \\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1 \\
+\end{bmatrix}
+\begin{bmatrix}
+\upsilon l_p \\
+\upsilon l_p \\
+0 \\
+0 \\
+\end{bmatrix}
+\end{equation}
+
+The $\upsilon l $ is the constant patch length defining the segmentation of the center line, which allows the control of the complexity of the inference. 
+
+The problem of modelling the spatial constraints is the center discussion in this approach. This is the consequence of the model, the spatial constraints determine the complexity of the model and therefore its applicability in real-time systems. 
+
+The task of lane and road perception is the equivalent of computing the marginal posterior distribution of all or a subset of the hidden variables in the graphical model, which can efficiently be performed with Belief Propagation, for which a detailed explanation can be found in \cite{lanesystem}.
+
+The results of this method are presented in an ROC graph form, which can be seen in figure \ref{fig12}. The graph shows the results obtained based on 3 different approaches to tree searching.
 
 \section{Road Curb Detection}
 
@@ -197,8 +280,7 @@ The road curb is represented by a polygonal chain, this chain consists of suppor
 
 \begin{figure}[ht]
 	\centering
-  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
-  	\missingfigure{\Huge I need the image, now!}
+  	\includegraphics[scale = 0.5]{pictures/detection_process.pdf}
 	\caption{Detection process}
 	\label{fig8}
 \end{figure}
@@ -211,9 +293,8 @@ The first step at road curb detection is the road curb feature extraction. This 
 
 \begin{figure}[ht]
 	\centering
-  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
-  	\missingfigure{\Huge I need the image, now!}
-	\caption{Polygonal chain}
+    \includegraphics[scale = 0.3]{pictures/polygonal_chain.pdf}
+	\caption{Polygonal chain - red points: supporting points of road curb polygonal chain ;red line: original link between supporting points; black line: perpendicular line to the connection of supporting points used for maximum search; red dotted line: new link between supporting points after maximum search \cite{stereo}}
 	\label{fig7}
 \end{figure}
 
@@ -228,25 +309,22 @@ d_{c,l} = h_{c,l + 1} - h_{c,l -1}
 \end{equation}
 
  Here is an approach proposed by Hoffman in \cite{hoffmann} to determine the maximum point with a subcell accuracy:
- 
- \begin{equation}
- \label{eq3}
-(\substack{\x^{*}_{c,max} \\ \y^{*}_{c,max}}) 
- \end{equation}
+
 
 
 \begin{equation}
 \label{eq4}
 w = \frac{d_{c,max-1} - d_{c,max+1}}{2(d_{c,max+1} - 2d_{c,max} + d_{c,max-1})}
 \end{equation}
-The supporting point for the polygonal chain is moved to the position found by this maximum search strategy. As curb height the heighest difference value $d_{c,max}$ is used. 
+The supporting point for the polygonal chain is moved to the position found by this maximum search strategy. As curb height the highest difference value $d_{c,max}$ is used. 
 
 
 There is no FPR/TPR evaluation offered for this method, but a speed evaluation was done in comparison between different mapping tehniques.
 
-\begin{table}
+\begin{table}[H]
 \centering
-\begin{tabular}[|c|c|c|c|]
+\caption{Method speed evaluation}
+\begin{tabular}{| c | c | c | c |}
 \hline
 Tasks & RSBM & GM & BBM \\
 \hline
@@ -257,22 +335,22 @@ Ego Compensation and Map Update & 7.51 ms & 7.44 ms & 8.39 ms \\
 Road Curb Detection & 3.73 ms & 3.66 ms & 3.72 ms \\
 \hline
 Sum & 19.55 ms & 16.46 ms & 17.49 ms \\
+\hline
 \end{tabular}
 \end{table}
 
 \subsection{Laserscanner Based Road Curb Detection}
 
-In this section a method proposed in \cite{stereo} using a laser scanner to detect road curbs will be described. The argument for using laser scanners instead of stereo cameras is that the laserscanner provides more accurate data. Some methods have been developed, that use sensor fusion with the stereo camera to overcome this precision lacking. Unfortunately these methods produce a big overhead in the data processing step, which makes a big difference in an autonomous vehicle, because it is a real-time system.
+In this section a method proposed in \cite{lidar13} using a laser scanner to detect road curbs will be described. The argument for using laser scanners instead of stereo cameras is that the laserscanner provides more accurate data. Some methods have been developed, that use sensor fusion with the stereo camera to overcome this precision lacking. Unfortunately these methods produce a big overhead in the data processing step, which makes a big difference in an autonomous vehicle, because it is a real-time system.
 
-For testing this method, the equipment proposed in \cite{stereo} is the following. For road curb detection, a multipurpose laserscanner is used. For the ego motion estimation a low cost inertial measurement unit is used in combination with the standard wheel speed sensors and chassis lift sensors. 
+For testing this method, the equipment proposed in \cite{lidar13} is the following. For road curb detection, a multipurpose laserscanner is used. For the ego motion estimation a low cost inertial measurement unit is used in combination with the standard wheel speed sensors and chassis lift sensors. 
 
 The road curb detection pipeline is shown in \ref{fig1}. As the figure shows, the detection is split into 3 modules. In the first module is used for for the road curb feature extraction and labelling. The detected road curb candidates have to be accumulated over time, so they are stored into the road curb map, where they undergo ego motion compensation. In the last module uses the temporal filtered parameters stored in the cells of the road curb map to group the road curb candidates into road curbs. In the end, the road curbs are represented as polygonal chains.  
 
 \begin{figure}[ht]
 	\centering
-  %\includegraphics[scale = 0.5]{pictures/lidar_system.pdf}
-  	\missingfigure{\Huge I need the image, now!}
-	\caption{Ro}
+    \includegraphics[scale = 0.5]{pictures/system_structure.pdf}
+	\caption{System structure \cite{lidar13}}
 	\label{fig1}
 \end{figure}
   
@@ -282,30 +360,27 @@ The IEPF algorithm described in this section is a well known segmentation algori
 
 \begin{figure}[ht]
 	\centering
-  %\includegraphics[scale = 0.35]{pictures/iepf.pdf}
-    \missingfigure{\Huge I need the image, now!}
-	\caption{Ro}
+   \includegraphics[scale = 0.35]{pictures/iepf.pdf}
+	\caption{The IEPF segmentation method  \cite{lidar13}}
 	\label{fig2}
 \end{figure}
  
 
 Another possible approach for segmentation is segmentation using regression lines. For every measurement point a forward and a backward regression line is calculated containing n points before or after the measurement point. The regression lines are calculated in the z-channel-space.  In all adjunct points with an intersection angle exceeding a certain threshold a maximum search regarding the intersection angle is conducted. At the maximum, a segment is terminated. The classification steps are performed in the y-z-space again as described for the IEPF algorithm. As the regressions lines are build with only a few measurement points this detection algorithm is sensitive to outliers int he data set? This segmentation method is shown in \ref{fig3}
 
-\begin{figure}[ht]
+\begin{figure}[H]
 	\centering
-  %\includegraphics[scale = 0.5]{pictures/iepf2.pdf}
-    \missingfigure{\Huge I need the image, now!}
-	\caption{Ro}
+  	\includegraphics[scale = 0.5]{pictures/iepf2.pdf}
+	\caption{Regression lines segmentation method  \cite{lidar13}}
 	\label{fig3}
 \end{figure}
 
 The final segmentation method considered is the hieararchic segmentation and classification of segments. The segments are built pairwise from neighbouring height values. Two neighbouring segments are merged if the standard deviation of the height values in relation to the calculated regression line of the merged segment is below a certain threshold. This is processed in a pyramid procedure until a new segment does not fulfill the described variance criterion.This process is shown in \ref{fig4}
 
-\begin{figure}[ht]
+\begin{figure}[H]
 	\centering
- %\includegraphics[scale = 0.55]{pictures/iepf3.pdf}
-   	\missingfigure{\Huge I need the image, now!}
-	\caption{Ro}
+ 	\includegraphics[scale = 0.55]{pictures/iepf3.pdf}
+	\caption{Hieararchic segmentation method  \cite{lidar13}}
 	\label{fig4}
 \end{figure}
 
@@ -319,11 +394,10 @@ The road curb extraction takes place in the road curb extraction module. The mod
 
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 	\centering
-  %\includegraphics[scale = 0.6]{pictures/extractor.pdf}
-    \missingfigure{\Huge I need the image, now!}
-	\caption{Ro}
+  	\includegraphics[scale = 0.4]{pictures/extractor.pdf}
+	\caption{Data structure of the road curb extractor (blue boxes: road curb candidates with center point (red x) and direction (red line); red boxes: groups or road curb candidates; black line: estimated central line of current lane;blue line: road curb segments) \cite{lidar13}}
 	\label{fig5}
 \end{figure}
 
@@ -334,9 +408,9 @@ The results obtained with this method are presented in \ref{tab1}.
 \centering
 \caption{FPR and TPR Evaluation}
 \label{tab1}
-\resizebox{\columnwidth}{20px}{\begin{tabular}{lllllll}
+\resizebox{\columnwidth}{!}{\begin{tabular}{lllllll}
 \cline{1-7}
-\multicolumn{1}{|l|}{Methods} & \multicolumn{1}{l|}{Curb HR} & \multicolumn{1}{l|}{Curb FPR} & \multicolumn{1}{l|}{Object HR} & \multicolumn{1}{l|}{Object FPR} & \multicolumn{1}{l|}{Street HR} & \multicolumn{1}{l|}{Street FPR} \\ \cline{1-7} 
+\multicolumn{1}{l}{Methods} & \multicolumn{1}{l}{Curb HR} & \multicolumn{1}{l}{Curb FPR} & \multicolumn{1}{l}{Object HR} & \multicolumn{1}{l}{Object FPR} & \multicolumn{1}{l}{Street HR} & \multicolumn{1}{l}{Street FPR} \\ \cline{1-7} 
 IEPF                         & 38.9\%                       & 3.3\%                         & 93.4\%                         & 0.9\%                           & 80.7\%                         & 12.9\%                          \\
 Regression Lines             & 22.1\%                       & 1.5\%                         & 89.8\%                         & 0.9\%                           & 82.1\%                         & 19.6\%                          \\
 Hierarchic Segmentation      & 30.9\%                       & 5.9\%                         & 73.2\%                         & 6.2\%                           & 78.2\%                         & 11.2\%                         
@@ -346,7 +420,7 @@ Hierarchic Segmentation      & 30.9\%                       & 5.9\%             
 \begin{table}
 \centering
 \caption{Method speed evaluation}
-\begin{tabular}[|c|c|c|c|]
+\resizebox{\columnwidth}{!}{\begin{tabular}{|c|c|c|c|}
 \hline
 Task & IEPF & Regression Lines & Hierarchic Segmentation \\
 \hline
@@ -358,7 +432,7 @@ Road Curb Extractor & 4.57 ms & 3.78 ms & 3.88 ms \\
 \hline
 Sum & 6.75 ms & 5.88 ms & 5.60 ms \\
 \hline
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 
@@ -366,9 +440,11 @@ The IEPF segmentation method has proven to be the most efficient method in detec
 
 
 \section{Conclusion}
-Through the analysis of the methods presented in this paper, one can see that lane marking detection and curb detection is a complex task, especially in urban environments with more occlussions and other disruptions. Despite that some methods had arized that produce good results, but not fool proof after all. More progress could be made with paying more attention to the context, like in \cite{virtuallane}.
+Through the analysis of the methods presented in this paper, one can see that lane marking detection and curb detection is a complex task, especially in urban environments with more occlussions and other disruptions. Despite that some methods had arized that produce good results, but not fool proof after all. More progress could be made with paying more attention to the context, for example in \cite{virtuallane} movements of other vehicles are used to construct a virtual lane.
 
 The comparsion of the stereo camera method with the stereo camera method with elevation maps and the LIDAR method is hardly comparable regarding speed, the method with the LIDAR scanner is orders of magnitude faster than the stereo camera method. Naturally the downside of the LIDAR scanner method is the cost of the hardware, in comparison to the cheap stereo camera. 
+
+On the side of lane marking detection, the improved RANSAC algorithm shows good results in uncluttered areas, but has many difficulties with signs painted on the road, this is a considerable lack of this algorithm. Considering the other lane marking detection example, based on a tree graphical model, this novel model has shown great flexibility in representing the road scene and shows promising results.  
 
 
 \nocite{*}
