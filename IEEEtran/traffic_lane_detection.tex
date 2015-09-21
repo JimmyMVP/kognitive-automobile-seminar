@@ -151,14 +151,14 @@ The results presented in table \ref{eval1} are obtained from the Caltech lane da
 In this section an approach will be discussed, that is based on a tree based graphical model of the road \cite{lanesystem}. The purpose of the tree model is to capture the way the joint distributions over random variables can be decomposed into a product of factors. The end goal is the development of efficient inference algorithms. The example of the tree based structure for a multilane road can be seen in figure \ref{fig10}.
 The nodes on the lower level represent a recursive decomposition of the root object into parts and subparts, this enables the dividing of the perception problem into subproblems that are easier to solve. One of the shortcomings of this approach is that it assumes a flat road surface. The model of the scene is made in the vehicle coordinate system, located at the center of the rear axis. 
 
-The tree is encoded by an undirected structured graph. The nodes correspond to three disjoint sets of variables $x \cup m \cup r$.  Each $x$ variable represents a part or a subpart of the multilane road, this is a hidden variable. The $m$ and $r$ variables correspond to the lane marking features and the road edge features. The edges between pairs of hidden variables define spatial constraints, which encode the dependencies between neighbouring hidden variables by means of conditional spatial distributions. Edges between hidden and observable random variables encode observation potentials.The details of the probability distribution factorization can be found in \cite{lanesystem}
+The tree is encoded by an undirected structured graph. The nodes correspond to three disjoint sets of variables $x \cup m \cup r$.  Each $x$ variable represents a part or a subpart of the multilane road, this is a hidden variable. The $m$ and $r$ variables correspond to the lane marking features and the road edge features. The edges between pairs of hidden variables define spatial constraints, which encode the dependencies between neighboring hidden variables by means of conditional spatial distributions. Edges between hidden and observable random variables encode observation potentials.The details of the probability distribution factorization can be found in \cite{lanesystem}
 
 The leaves encode feature variables with associated observations, two of the observed features define a local driveable area referred to as patch, which form the second level of the tree. The figure \ref{fig11} illustrates that each patch is defined by a left and right lane boundary feature.
 
 \begin{figure}[H]
 	\centering
     \includegraphics[scale = 0.4]{pictures/patch.pdf}
-	\caption{CHM of a patch and illustration of the modeled spatial constraints.(a) Patch is decomposed into a left and a right lane boundary, which are directlyobservable. (b) Illustration of the modeled spatial constraints, where spatialuncertainties are illustrated by showing 2-D Gaussian distributions, where darkcolors correspond to more likely locations.\cite{lanesystem}}
+	\caption{CHM of a patch and illustration of the modeled spatial constraints.(a) Patch is decomposed into a left and a right lane boundary, which are directly observable. (b) Illustration of the modeled spatial constraints, where spatial uncertainties are illustrated by showing 2-D Gaussian distributions, where dark colors correspond to more likely locations.\cite{lanesystem}}
 	\label{fig11}
 \end{figure}
 
@@ -221,7 +221,7 @@ cos(\vartheta_i) & 0 & 0 & 0 \\
 
 The $\upsilon l $ is the constant patch length defining the segmentation of the center line, which allows the control of the complexity of the inference. 
 
-The problem of modelling the spatial constraints is the center discussion in this approach. This is the consequence of the model, the spatial constraints determine the complexity of the model and therefore its applicability in real-time systems. 
+The problem of modeling the spatial constraints is the center discussion in this approach. This is the consequence of the model, the spatial constraints determine the complexity of the model and therefore its applicability in real-time systems. 
 
 The task of lane and road perception is the equivalent of computing the marginal posterior distribution of all or a subset of the hidden variables in the graphical model, which can efficiently be performed with Belief Propagation, for which a detailed explanation can be found in \cite{lanesystem}.
 

@@ -1,0 +1,442 @@
+%\documentclass{beamer}
+%\documentclass[c]{beamer}
+ \documentclass[t]{beamer}
+%\documentclass[b]{beamer}
+\listfiles
+
+\mode<presentation>
+{
+% \usetheme[english]{KIT}
+% \usetheme[usefoot]{KIT}
+  \usetheme[deutsch]{KIT}
+
+%%  \usefonttheme{structurebold}
+
+  \setbeamercovered{transparent}
+
+  %\setbeamertemplate{enumerate items}[circle]
+  \setbeamertemplate{enumerate items}[ball]
+}
+
+\usepackage{babel}
+\date{22.07.2015}
+%\DateText
+
+%\KITfoot{\parbox[t]{90mm}{\today:\qquad Dies ist eine sehr lange selbstdefinierte Fu\ss{}zeile -- Dies ist eine sehr lange selbstdefinierte Fu\ss{}zeile -- Dies ist eine sehr lange selbstdefinierte Fu\ss{}zeile}}
+
+
+%\usepackage[latin1]{inputenc}
+\usepackage[utf8]{inputenc}
+\usepackage[TS1,T1]{fontenc}
+\usepackage{array}
+\usepackage{lipsum}
+
+\usenavigationsymbols
+%\usenavigationsymbols[sfHhdb]
+%\usenavigationsymbols[sfhHb]
+
+\title[Projektpraktikum Maschinelles Lernen]{Projektpraktikum Maschinelles Lernen}
+\subtitle{Detektion von Straßenmarkierungen}
+
+\author{Rainer Stal, Katharina Dormann, Sinan Onogur, Marin Vlastelica Pogančić}
+%INSTITUTS- FAKULTÄTS-, ABTEILUNGSNAME
+%\institute{Institut für Anthropomatik, Humanoids and Intelligence Systems Lab}
+\institute{Forschungszentrum Informatik}
+
+\TitleImage[height=\titleimageht]{Bilder/KIT-Titel.png}
+\TitleImage[width=\titleimagewd]{Bilder/KIT-Titel.png}
+
+\newcommand{\itemsiii}{
+  \item Uter res comprovincialis placitum opus alo Liceo, ploro an at lenocinium.
+        Iuste Immanitas dux sus conclamo an Diuturnus
+  \item Fatigo, almus ut erro cupido res famulatus Adstringo
+  \item Stupendum commemoro Annuo ars quies Polliceor
+}
+\newcommand{\itemsi}{
+  \item Ne necne Ne ymo iam Vota, Rutilus dux scelus internuntius.
+}
+
+
+\newcommand{\parxmpl}{
+  Uter res comprovincialis placitum opus alo Liceo, ploro an at lenocinium.
+  Iuste Immanitas dux sus conclamo an Diuturnus
+  Fatigo, almus ut erro cupido res famulatus Adstringo
+  Stupendum commemoro Annuo ars quies Polliceor
+}
+\newcommand{\Parxmpl}{
+  Iuste Immanitas dux sus conclamo an Diuturnus
+  Fatigo, almus ut erro cupido res famulatus Adstringo
+}
+
+\begin{document}
+
+\begin{frame}
+  \maketitle
+\end{frame}
+
+\begin{frame}
+\frametitle{Überblick}
+%\tableofcontents
+\begin{itemize}
+	\setlength{\itemsep}{20pt}
+	\item Motivation
+	\item Grundlagen
+	\item Ansatz: SVM
+	\item Ansatz: Fine-tuning
+	\item Ergebnisse
+	\item Ausblick
+\end{itemize}
+\end{frame}
+
+\section{Motivation}
+\begin{frame}
+	\frametitle{Motivation}
+	\hspace{5mm}
+	\includegraphics[width=.9\textwidth, height=6.5cm]{Bilder/motivation01.png}
+\end{frame}
+
+\section{Grundlagen}
+\begin{frame}
+	\frametitle{Convolutional Neural Networks}
+	\begin{itemize}
+	\item Wie?
+	\begin{itemize}
+	\item Convolutional Layer $\Rightarrow$ Feature-Extraktion
+	\item ReLU (Rectified Linear Units) $\Rightarrow$ Aktivierungsfunktion
+	\item Pooling Layer $\Rightarrow$ Reduktion der Feature-Varianz
+	\item Loss Layer $\Rightarrow$ Klassifikation von sich gegenseitig ausschließenden Klassen
+	\end{itemize}
+	\bigskip
+	\hspace{3mm}
+	\includegraphics[width=.9\textwidth,height=3.5cm]{Bilder/convnet01.png}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Convolutional Neural Networks}
+	\begin{itemize}
+	\item Warum?
+	\begin{itemize}
+		\item Inspiriert von biologischen Prozessen in menschlicher Retina ("'levels of abstraction"')
+	\end{itemize}
+	\bigskip
+	\hspace{2mm}
+	\includegraphics[width=.9\textwidth, height=4cm]{Bilder/layers01.png}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Tools}
+%	\bigskip
+	\begin{itemize}
+	\item Framework $\Rightarrow$ Caffe (Python wrapper)
+	\item Datasets:
+	\begin{itemize}
+		\item Training $\Rightarrow$ ROad MArkings (116 Bilder mit Groundtruth-Labeln)
+		\item Evaluation $\Rightarrow$ Max-Planck-Institut (ursprünglich mehr semantisch oritentierte Labels, selbst erstellt)
+	\end{itemize}
+	\item ROMA Dataset:
+	\bigskip
+	\begin{center}
+	\includegraphics[width=.8\textwidth, height=4cm]{Bilder/dataset01.png}	
+	\end{center}	
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Vorverarbeitung}
+	\begin{itemize}
+	\item Sliding Window $\Rightarrow$ Fensterung der Bilder in kleine Abschnitte (Überlappung möglich)
+	\item Erzeugung eines großen Datensatzes
+	\item Einteilung in zwei Klassen mithilfe der Groundtruth-Label
+	\item Zuordnung zur positiven Klasse wenn Markierung im Zentrum
+%	\item Parameter (beispielhaft):
+%	\begin{itemize}
+%		\item Abschnitte von 32x32 Pixel von 1280x1024 Bildern
+%		\item Überlappung: Verschiebung um 10 Pixel
+%	\end{itemize}
+	\item Ausgabe:
+	\includegraphics[width=.9\textwidth, height=4cm]{Bilder/windows01.png}
+	\end{itemize}
+\end{frame}
+
+\section{Ansatz: SVM}
+
+\begin{frame}{Erster Trainingsansatz}
+\bigskip
+\begin{itemize}
+\item Lernen von Grund auf mit zuf\"alligen Initialgewichten
+\item Architektur der Netzes: AlexNet
+\item Ergebnis: schlechte Generalisierung auf unbekannten Bildern
+\item Zu hochdimensionaler Feature Space f\"ur gegebenen Datensatz?
+\item Verkleinerung der Feature Maps
+\item Noch immer schlechte Generalisierung
+\item Folgerung: Gr\"o{\ss}e des Datensatzes und Trainingszeit reichen nicht aus, um ein CNN zu trainieren
+\end{itemize}
+\end{frame}
+
+%\begin{frame}{Anpassung des Netzes}
+%\bigskip
+%\begin{itemize}
+%\item
+%Verkleinerung der Feature Maps
+%\item
+%Immer noch schlechte Generalisierung
+%\item
+%Gr\"o{\ss}e des Datensatzes und Trainingszeit reichen nicht aus, um ein CNN zu trainieren
+%\end{itemize}
+%\end{frame}
+
+\begin{frame}
+ \frametitle{Transfer Learning}
+\bigskip
+  \begin{itemize}
+  \item Bekannter Ansatz bei beschr\"ankter Datensatzgr\"o{\ss}e und Zeit %Referenzieren!!!!!!!
+  \item Hinzunahme eines auf einem sehr gro{\ss}en Datensatz vortrainierten Netzes: ImageNet (1,2 Mio. Bilder)
+  \item Annahme: Das vortrainierte Netz liefert gute Merkmale f\"ur unbekannte Daten
+  %\item Passe das Netz an die neue Aufgabe an 
+  \item Zwei M\"oglichkeiten:
+	\begin{itemize} %Das vortrainierte Netz als Feature Extractor benutzen oder es weiter verfeinern 
+		\item Feature-Extraktion + SVM
+		\item Fine-Tuning  
+	\end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Feature-Extraktion + SVM}
+\bigskip
+\begin{itemize}
+%\item Benutze vortrainiertes Netz, um Features der eigenen Trainingsdaten (Windows) zu extrahieren
+\item Extraktion der Features aus vorletzter Schicht (fc7) \(\rightarrow\) 4096 Dimensionen
+\item Training einer SVM mit extrahierten Features
+\item RBF-Kernel bietet keinen Vorteil gegen\"uber linearer SVM
+\item Features aufgrund hoher Dimension des Feature Space linear separierbar
+\item Klassifikation eines Windows:
+\begin{itemize}
+\item Extraktion der Features mit Hilfe des selben vortrainierten Netzes
+\item Bestimmung der Wahrscheinlichkeit der Zugeh\"origkeit zu den Klassen mit Hilfe der SVM
+\end{itemize}
+%\item Benutze SVM als Klassifikator
+\end{itemize}
+\end{frame}
+
+%\begin{frame}{SVM}
+%\bigskip
+%\begin{itemize}
+%\item
+%Lineare SVM oder RBF-Kernel?
+%\item
+%Vergleichbare Ergebnisse f\"ur lineare SVM und RBF-Kernel mit bestimmten Parametern
+%\item
+%Features aufgrund hoher Dimension (4096-dimensionaler Features space) linear separierbar
+%\item
+%Benutze aus Performancegr\"unden lineare SVM
+%\end{itemize}
+%\end{frame}
+
+%\begin{frame}{Vortrainiertes Netz + SVM: Klassifikation}
+%\bigskip
+%\begin{itemize}
+%\item
+%Nimm zu klassifizierendes Window
+%\item
+%Extrahiere Features mit Hilfe des selben vortrainierten Netzes (ImageNet)
+%\item
+%Benutze zuvor trainierte SVM zur Klassifikation
+%\item
+%Lass von SVM Wahrscheinlichkeit der Zugeh\"origkeit zu den beiden Klassen ausgeben
+%\end{itemize}
+%\end{frame}
+
+\section{Ansatz: Fine-tuning}
+\begin{frame}
+ \frametitle{Fine-tuning}
+%\bigskip
+  \begin{itemize}
+	\item Verfeinerung der Gewichte durch Backpropagation
+	\item Low-Level Features in den ersten Schichten (Kanten, Farben etc.)
+	\item Spezifischere Features in höheren Schichten (Autos, Häuser etc.)
+	\item Training über alle Schichten oder "'Einfrieren"' der ersten Schichten
+  \end{itemize}
+  \bigskip
+  \hspace{3mm}
+  \includegraphics[width=.85\textwidth, height=4cm]{Bilder/transfer_cut.png}
+\end{frame}
+
+%\begin{frame}
+%  \frametitle{Fine-tuning}
+%  \begin{figure}
+%  \includegraphics[width=.9\textwidth, height=6.5cm]{Bilder/transfer.png}
+%  %\caption{Test}
+%  \end{figure}
+%\end{frame}
+
+\begin{frame}
+  \frametitle{Fine-tuning: Architektur}
+  \begin{columns}[T]
+    \column{55mm}
+    \bigskip
+    \begin{itemize}%\small
+    \item AlexNet
+%    \item Gewichte der ersten 3 Convolution Layer werden übernommen
+   \item Übertragung der Gewichte aus den ersten 3 Convolution Layer
+    \item Zufällige Initialisierung und Training der restlichen Layer
+    \item Verkleinerung des Netzes um die Kapazität zu verringern
+    \end{itemize}
+    \column{50mm}
+    \hspace*{-5mm}%\hfill
+%	\begin{figure} %Bild vom Netz
+	\includegraphics[width=5cm,height=6.8cm]{Bilder/FinetuneNet2.pdf}
+%	\caption{Test}
+%	\end{figure}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Klassifikation}
+	\bigskip
+	\begin{itemize}
+		\item Kombination mit einem adaptiven Sliding Window:
+		\includegraphics[width=.9\textwidth,height=3cm]{Bilder/adaptiveSliding.pdf}
+%		\begin{itemize}
+%			\item Gehe zuerst mit 128x128 großen Windows über das Bild
+%			\item Falls ein bestimmter Threshold erreicht wird, gehe über diesen Window mit 64x64 Abschnitten, usw.
+%		\end{itemize}
+		\item 3 verschiedene Klassifikatoren trainiert auf unterschiedlich großen Windows
+		\item Vorteile:
+		\begin{itemize}
+			\item Verhinderung von Ausreißern durch Vorselektion
+			\item Schnellere Iteration durch das Bild
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+%erste Schichten Kantenfilter
+%spätere Schichten spezifisch
+
+%adaptives sliding -> verschiedene Netze
+
+\section{Ergebnisse}
+
+\begin{frame}
+	\frametitle{Performance (SVM)}
+	\begin{itemize}
+	\item Accuracy, Precision und Recall vom SVM-Ansatz:
+	\end{itemize}
+	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/figure_SVM.pdf}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Performance (Fine-tuning)}
+	\begin{itemize}
+	\item Accuracy, Precision und Recall vom Fine-tuning-Ansatz:
+	\end{itemize}
+	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/figure_1.pdf}
+\end{frame}
+
+\begin{frame} %SVM
+	\frametitle{Klassifikation: SVM (adaptiv, fein-granular)}
+	\begin{itemize}
+	\item Laufzeit: 8.91 Sekunden
+	\end{itemize}
+	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/Thresh0_5_Frame-00719_resized.png}
+\end{frame}
+
+\begin{frame} %Finetuning 32
+	\frametitle{Klassifikation: Fine-tuning (nicht adaptiv)}
+	\begin{itemize}
+	\item Laufzeit: 7.27 Sekunden
+	\end{itemize}
+	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/FineTune32Frame-00719_resized.png}
+\end{frame}
+
+\begin{frame} %Finetuning grob
+	\frametitle{Klassifikation: Fine-tuning (adaptiv, grob)}
+	\begin{itemize}
+	\item Laufzeit: 0.89 Sekunden
+	\end{itemize}
+	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/FineTuneGrobFrame-00719_resized.png}
+\end{frame}
+
+\begin{frame} %Finetuning fine
+	\frametitle{Klassifikation: Fine-tuning (adaptiv, fein-granular)}
+	\begin{itemize}
+	\item Laufzeit: 3.62 Sekunden %14.58 %34.16
+	\end{itemize}
+%	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/FineTuneFrame-00719_resized.png}
+	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/new.png}
+\end{frame}
+
+\begin{frame} %Finetuning fine
+	\frametitle{Klassifikation: Fine-tuning (adaptiv, sehr fein-granular)}
+	\begin{itemize}
+	\item Laufzeit: 34.16 Sekunden %14.58 %34.16
+	\end{itemize}
+	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/FineTuneFrame-00719_resized.png}
+%	\includegraphics[width=.95\textwidth,height=6cm]{Bilder/new.png}
+\end{frame}
+
+\section{Ausblick}
+\begin{frame}
+	\frametitle{Ausblick}
+	\bigskip
+	\begin{itemize}
+		\item Parallelisierung 
+		\item Trainieren mit größeren Datensatz!
+		\item Fusion mit Fahrbahndetektion
+		\item Vergrößerung von Bildauschnitten mit kleineren Markierungen
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[c]
+\begin{center}
+\Huge{Vielen Dank für Ihre Aufmerksamkeit!}
+\end{center}
+\end{frame}
+
+\begin{frame}[c]
+\begin{center}
+\Huge{Noch Fragen?}
+\end{center}
+\end{frame}
+
+
+%\begin{frame}
+%\begin{thebibliography}{1}
+
+%  \bibitem{notes} John W. Dower {\em Readings compiled for History
+%  21.479.}  1991.
+%
+%  \bibitem{impj}  The Japan Reader {\em Imperial Japan 1800-1945} 1973:
+%  Random House, N.Y.
+%
+%  \bibitem{norman} E. H. Norman {\em Japan's emergence as a modern
+%  state} 1940: International Secretariat, Institute of Pacific
+%  Relations.
+%
+%  \bibitem{fo} Bob Tadashi Wakabayashi {\em Anti-Foreignism and Western
+%  Learning in Early-Modern Japan} 1986: Harvard University Press.
+
+%  \end{thebibliography}
+%\end{frame}
+%
+%\begin{frame}
+%\frametitle{Abbildungsverzeichnis}
+%\begin{itemize} \scriptsize
+%\item Röntgenaufnahme (S.2): O. Erat, O. Pauly, S. Weidert, P. Thaller, E. Euler, W. Mutschler, N. Navab, and P. Fallavollita, “How a surgeon becomes superman by visualization of intelligently fused multimodalities,” in SPIE medical imaging. International Society for Optics and Photonics,
+%2013, pp. 86 710L–86 710L
+%\item Operationsaufnahmen (S. 3-5): T. Sielhorst, M. Feuerstein, and N. Navab, “Advanced medical displays: A literature
+%review of augmented reality,” Display Technology, Journal of, vol. 4, no. 4, pp. 451–467,
+%2008
+%\item Reality-Virtuality Continuum (S. 6): P. Milgram, H. Takemura, A. Utsumi, and F. Kishino, “Augmented reality: A class of
+%displays on the reality-virtuality continuum,” in Photonics for Industrial Applications. International Society for Optics and Photonics, 1995, pp. 282–292
+%\item HMDs (S. 7): R. T. Azuma et al., “A survey of augmented reality,” Presence, vol. 6, no. 4, pp. 355–385,
+%1997
+%\item Classical alpha blending (S. 9): O. Pauly, B. Diotte, P. Fallavollita, S. Weidert, E. Euler, and N. Navab, “Machine learning-based augmented reality for improved surgical scene understanding,” Computerized Medical Imaging and Graphics, 2014
+%\item relevante Klassen (S. 10): O. Pauly, A. Katouzian, A. Eslami, P. Fallavollita, and N. Navab, “Supervised classification for customized intraoperative augmented reality visualization,” in Mixed and Augmented Reality (ISMAR), 2012 IEEE International Symposium on. IEEE, 2012, pp. 311–312
+%\item New Fusion Approach (S. 13): O. Pauly, B. Diotte, P. Fallavollita, S. Weidert, E. Euler, and N. Navab, “Machine learning-based augmented reality for improved surgical scene understanding,” Computerized Medical Imaging and Graphics, 2014
+%\end{itemize}
+%\end{frame}
+
+\end{document}
